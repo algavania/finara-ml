@@ -2,13 +2,32 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import APIKeyHeader
 import os
+from dotenv import load_dotenv
+
+load_dotenv() # Load variables from .env file
 
 from app.routers import xai, optimizer, profiler
 
+tags_metadata = [
+    {
+        "name": "XAI",
+        "description": "Explainable Artificial Intelligence for Risk Assessment. Evaluates user debt risk and provides SHAP value explanations for transparency.",
+    },
+    {
+        "name": "Optimizer",
+        "description": "Reinforcement Learning (PPO) agent that recommends optimal debt payoff strategies. *(Phase 5)*",
+    },
+    {
+        "name": "Profiler",
+        "description": "Behavioral clustering to identify spending archetypes and generate personalized tips. *(Phase 5)*",
+    },
+]
+
 app = FastAPI(
     title="Finara ML Engine",
-    description="AI/ML microservice for explainable debt risk assessment, RL optimization, and behavioral profiling",
+    description="AI/ML microservice for explainable debt risk assessment, RL optimization, and behavioral profiling. \n\n**Note**: All endpoints require an API Key passed in the `X-API-Key` header.",
     version="0.1.0",
+    openapi_tags=tags_metadata
 )
 
 # CORS — allow Edge Function and local dev
