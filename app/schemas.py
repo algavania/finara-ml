@@ -70,3 +70,16 @@ class ProfilerResponse(BaseModel):
     traits: list[str]
     risk_impact: str
     actionable_tips: list[str]
+
+# --- Parser Schemas ---
+
+class ParsedTransaction(BaseModel):
+    date: str
+    merchant: str
+    amount: float
+    category: str
+    type: str  # income or expense
+
+class ParserResponse(BaseModel):
+    transactions: list[ParsedTransaction]
+    warnings: Optional[list[str]] = []
