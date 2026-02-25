@@ -1,5 +1,8 @@
 from fastapi import APIRouter
-from app.schemas import OptimizerRequest, OptimizerResponse, MonthlyAllocation
+from app.schemas import (
+    OptimizerRequest, OptimizerResponse, MonthlyAllocation,
+    RLOptimizerRequest, RLOptimizerResponse,
+)
 import copy
 import numpy as np
 
@@ -81,7 +84,7 @@ def simulate_repayment(debts_sim, income, expenses, std_dev, is_deterministic=Tr
         # 3. Add monthly interest
         for d in current_debts:
             if d['balance'] > 0:
-                monthly_interest = d['balance'] * (d['int_rate'] / 100.0 / 12.0)
+                monthly_interest = d['balance'] * (d['int_rate'] / 12.0)
                 d['balance'] += monthly_interest
                 total_interest_paid += monthly_interest
                 
@@ -159,5 +162,87 @@ async def recommend(request: OptimizerRequest):
     return OptimizerResponse(
         monthly_plan=monthly_plan,
         metrics=metrics,
-        training_curve=[]  # Left blank as we moved to a deterministic simulation over RL in Phase 4
+        training_curve=[]
+    )
+
+
+@router.post("/rl-recommend", response_model=RLOptimizerResponse)
+async def rl_recommend(request: RLOptimizerRequest):
+    """
+    PPO Reinforcement Learning optimizer that trains an agent on-the-fly
+    to discover optimal debt allocation strategies.
+
+    This complements the deterministic `/recommend` endpoint by using
+    a learning-based approach that can discover counter-intuitive
+    strategies (e.g., paying a lower-priority debt first to free up
+    minimum payment obligations).
+
+    Training is lightweight (~10-50K timesteps) and completes in seconds.
+    """
+    from app.services.rl_optimizer import train_agent, get_rl_plan
+
+    # Prepare debt dicts for the environment
+    debts_env = []
+    for d in request.debts:
+        try:
+            days = int(d.due_date) if d.due_date.isdigit() else 30
+        except:
+            days = 30
+        debts_env.append({
+            "name": d.name,
+            "balance": d.balance,
+            "interest_rate": d.interest_rate,
+            "minimum_payment": d.minimum_payment,
+            "days_due": max(1, min(days, 30)),
+        })
+
+    risk_tol = request.risk_tolerance or "moderate"
+    timesteps = request.training_timesteps or 20000
+
+    # 1. Train PPO agent
+    model, reward_curve, env = train_agent(
+        debts=debts_env,
+        monthly_income=request.monthly_income,
+        monthly_expenses=request.monthly_expenses,
+        savings=request.savings,
+        risk_tolerance=risk_tol,
+        training_timesteps=timesteps,
+    )
+
+    # 2. Run inference for the RL plan
+    rl_allocations, rl_metrics = get_rl_plan(model, env)
+
+    # 3. Run deterministic plan for comparison
+    ahp_priorities = calculate_ahp_priority(request.debts)
+    debts_sim = []
+    for d in request.debts:
+        debts_sim.append({
+            "name": d.name,
+            "balance": d.balance,
+            "min_pay": d.minimum_payment,
+            "int_rate": d.interest_rate,
+            "priority": ahp_priorities.get(d.name, 0.0)
+        })
+    det_months, _, det_interest = simulate_repayment(
+        debts_sim, request.monthly_income, request.monthly_expenses,
+        std_dev=0.0, is_deterministic=True,
+    )
+
+    # 4. Build comparison
+    rl_vs_deterministic = {
+        "rl_months": rl_metrics["months_to_free"],
+        "deterministic_months": det_months,
+        "rl_interest": rl_metrics["total_interest"],
+        "deterministic_interest": round(det_interest, 2),
+        "months_saved": det_months - rl_metrics["months_to_free"],
+        "interest_saved": round(det_interest - rl_metrics["total_interest"], 2),
+    }
+
+    monthly_plan = [MonthlyAllocation(**a) for a in rl_allocations]
+
+    return RLOptimizerResponse(
+        monthly_plan=monthly_plan,
+        metrics=rl_metrics,
+        training_reward_curve=reward_curve,
+        rl_vs_deterministic=rl_vs_deterministic,
     )

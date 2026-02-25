@@ -70,6 +70,26 @@ class ProfilerResponse(BaseModel):
     traits: list[str]
     risk_impact: str
     actionable_tips: list[str]
+    features: Optional[dict[str, float]] = {}
+    cluster_distances: Optional[dict[str, float]] = {}
+
+
+# --- RL Optimizer Schemas ---
+
+class RLOptimizerRequest(BaseModel):
+    debts: list[DebtInput]
+    monthly_income: float
+    monthly_expenses: float
+    savings: float
+    risk_tolerance: Optional[str] = "moderate"
+    training_timesteps: Optional[int] = 20000  # PPO training steps
+
+class RLOptimizerResponse(BaseModel):
+    monthly_plan: list[MonthlyAllocation]
+    metrics: dict
+    training_reward_curve: list[float]
+    rl_vs_deterministic: dict
+
 
 # --- Parser Schemas ---
 
