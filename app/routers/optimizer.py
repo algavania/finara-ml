@@ -72,14 +72,15 @@ def simulate_repayment(debts_sim, income, expenses, std_dev, is_deterministic=Tr
                         remaining_surplus = 0
                         
         # 2. Allocate remaining surplus to highest priority debt
-        if remaining_surplus > 0:
+        while remaining_surplus > 0:
             active_debts = [d for d in current_debts if d['balance'] > 0]
-            if active_debts:
-                target_debt = max(active_debts, key=lambda x: x['priority'])
-                pay = min(target_debt['balance'], remaining_surplus)
-                month_alloc[target_debt['name']] += pay
-                target_debt['balance'] -= pay
-                remaining_surplus -= pay
+            if not active_debts:
+                break
+            target_debt = max(active_debts, key=lambda x: x['priority'])
+            pay = min(target_debt['balance'], remaining_surplus)
+            month_alloc[target_debt['name']] += pay
+            target_debt['balance'] -= pay
+            remaining_surplus -= pay
                 
         # 3. Add monthly interest
         for d in current_debts:
@@ -245,4 +246,139 @@ async def rl_recommend(request: RLOptimizerRequest):
         metrics=rl_metrics,
         training_reward_curve=reward_curve,
         rl_vs_deterministic=rl_vs_deterministic,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Snowball / Avalanche / Finara strategy comparison
+# ---------------------------------------------------------------------------
+
+def simulate_strategy(debts_list, income, expenses, strategy="finara", ahp_priorities=None, std_dev=0.15, is_deterministic=True):
+    """
+    Generic simulation that supports three strategies:
+      - 'snowball'  : excess goes to smallest balance first
+      - 'avalanche' : excess goes to highest interest rate first
+      - 'finara'    : excess goes to highest AHP priority first (default)
+    Returns (months, total_interest_paid).
+    """
+    current = copy.deepcopy(debts_list)
+    month = 0
+    total_interest = 0.0
+
+    while sum(d['balance'] for d in current) > 0 and month < 120:
+        month += 1
+        
+        if not is_deterministic:
+            m_income = max(0, np.random.normal(income, income * std_dev))
+            m_expenses = max(0, np.random.normal(expenses, expenses * std_dev))
+        else:
+            m_income = income
+            m_expenses = expenses
+            
+        surplus = m_income - m_expenses
+        remaining = surplus
+
+        for d in current:
+            if d['balance'] > 0:
+                payment = min(d['balance'], d['min_pay'])
+                if remaining >= payment:
+                    d['balance'] -= payment
+                    remaining -= payment
+                else:
+                    if remaining > 0:
+                        pay = min(d['balance'], remaining)
+                        d['balance'] -= pay
+                        remaining = 0
+
+        # 2. Allocate excess based on strategy
+        while remaining > 0:
+            active = [d for d in current if d['balance'] > 0]
+            if not active:
+                break
+            if strategy == "snowball":
+                target = min(active, key=lambda x: x['balance'])
+            elif strategy == "avalanche":
+                target = max(active, key=lambda x: x['int_rate'])
+            else:  # finara
+                target = max(active, key=lambda x: x.get('priority', 0))
+            pay = min(target['balance'], remaining)
+            target['balance'] -= pay
+            remaining -= pay
+
+        # 3. Accrue monthly interest
+        for d in current:
+            if d['balance'] > 0:
+                mi = d['balance'] * (d['int_rate'] / 12.0)
+                d['balance'] += mi
+                total_interest += mi
+
+    return month, round(total_interest, 2)
+
+
+from app.schemas import StrategyComparisonResponse, StrategyResult
+
+@router.post("/compare-strategies", response_model=StrategyComparisonResponse)
+async def compare_strategies(request: OptimizerRequest):
+    """
+    Compare Snowball, Avalanche, and Finara Optimized strategies side-by-side.
+    Returns months_to_free and total_interest for each strategy.
+    """
+    ahp_priorities = calculate_ahp_priority(request.debts)
+
+    base_debts = []
+    for d in request.debts:
+        base_debts.append({
+            "name": d.name,
+            "balance": d.balance,
+            "min_pay": d.minimum_payment,
+            "int_rate": d.interest_rate,
+            "priority": ahp_priorities.get(d.name, 0.0),
+        })
+
+    risk_tol = request.risk_tolerance.lower() if request.risk_tolerance else "moderate"
+    if risk_tol in ("conservative", "low"):
+        std_dev = 0.05
+    elif risk_tol in ("aggressive", "high"):
+        std_dev = 0.25
+    else:
+        std_dev = 0.15
+
+    results = {}
+    for strategy in ["snowball", "avalanche", "finara"]:
+        months, interest = simulate_strategy(
+            base_debts,
+            request.monthly_income,
+            request.monthly_expenses,
+            strategy=strategy,
+            ahp_priorities=ahp_priorities,
+            std_dev=std_dev,
+            is_deterministic=True
+        )
+        
+        # Monte Carlo for worst_case_months
+        sim_months = []
+        for _ in range(100):
+            m, _ = simulate_strategy(
+                base_debts,
+                request.monthly_income,
+                request.monthly_expenses,
+                strategy=strategy,
+                ahp_priorities=ahp_priorities,
+                std_dev=std_dev,
+                is_deterministic=False
+            )
+            sim_months.append(m)
+        worst_case_months = int(np.percentile(sim_months, 95))
+        
+        results[strategy] = StrategyResult(
+            months_to_free=months,
+            total_interest=interest,
+            worst_case_months=worst_case_months
+        )
+
+    recommendation = min(results.keys(), key=lambda k: results[k].total_interest)
+
+    return StrategyComparisonResponse(
+        strategies=results,
+        recommendation=recommendation
     )

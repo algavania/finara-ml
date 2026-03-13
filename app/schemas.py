@@ -91,6 +91,16 @@ class RLOptimizerResponse(BaseModel):
     rl_vs_deterministic: dict
 
 
+class StrategyResult(BaseModel):
+    months_to_free: int
+    total_interest: float
+    worst_case_months: int
+
+class StrategyComparisonResponse(BaseModel):
+    strategies: dict[str, StrategyResult]
+    recommendation: str
+
+
 # --- Parser Schemas ---
 
 class ParsedTransaction(BaseModel):
