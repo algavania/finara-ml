@@ -6,8 +6,11 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app/ ./app/
-COPY trained_models/ ./trained_models/
-COPY data/ ./data/
+
+# Generate training data and train the model at build time
+RUN mkdir -p trained_models data && \
+    python -m app.services.mock_data_generator && \
+    python -m app.services.risk_model
 
 EXPOSE 7860
 
