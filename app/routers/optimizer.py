@@ -85,7 +85,7 @@ def simulate_repayment(debts_sim, income, expenses, std_dev, is_deterministic=Tr
         # 3. Add monthly interest
         for d in current_debts:
             if d['balance'] > 0:
-                monthly_interest = d['balance'] * (d['int_rate'] / 12.0)
+                monthly_interest = d['balance'] * d['int_rate']
                 d['balance'] += monthly_interest
                 total_interest_paid += monthly_interest
                 
@@ -308,7 +308,7 @@ def simulate_strategy(debts_list, income, expenses, strategy="finara", ahp_prior
         # 3. Accrue monthly interest
         for d in current:
             if d['balance'] > 0:
-                mi = d['balance'] * (d['int_rate'] / 12.0)
+                mi = d['balance'] * d['int_rate']
                 d['balance'] += mi
                 total_interest += mi
 

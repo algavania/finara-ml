@@ -149,12 +149,15 @@ class DebtPayoffEnv(gym.Env):
         month_interest = 0.0
         for d in self.debts:
             if d["balance"] > 0:
-                interest = d["balance"] * (d["interest_rate"] / 12.0)
+                interest = d["balance"] * d["interest_rate"]
                 d["balance"] += interest
                 month_interest += interest
 
         self.total_interest_paid += month_interest
-        reward -= month_interest * 0.01  # penalize interest accrual
+        
+        # Normalize interest penalty by income so it doesn't break across currencies (USD vs IDR)
+        interest_penalty_ratio = (month_interest / (self.monthly_income + 1e-9))
+        reward -= interest_penalty_ratio * 5.0  # penalize interest accrual relative to income
 
         # 4. Bonus for clearing a debt
         for d in self.debts:
