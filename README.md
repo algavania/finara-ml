@@ -1,3 +1,12 @@
+---
+title: Finara ML
+emoji: 🧠
+colorFrom: green
+colorTo: blue
+sdk: docker
+pinned: false
+---
+
 <p align="center">
   <h1 align="center">🧠 Finara ML Engine</h1>
   <p align="center"><strong>AI/ML Microservice for Explainable Financial Risk Assessment & Debt Optimization</strong></p>
