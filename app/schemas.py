@@ -95,6 +95,7 @@ class StrategyResult(BaseModel):
     months_to_free: int
     total_interest: float
     worst_case_months: int
+    monthly_plan: Optional[list[MonthlyAllocation]] = []
 
 class StrategyComparisonResponse(BaseModel):
     strategies: dict[str, StrategyResult]

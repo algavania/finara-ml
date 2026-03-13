@@ -172,13 +172,11 @@ class DebtPayoffEnv(gym.Env):
         # 5. Time penalty
         reward -= 0.1
 
-        # Record allocation percentages
-        total_paid = sum(month_alloc.values())
-        if total_paid > 0:
-            pct = {k: round(v / total_paid, 4) for k, v in month_alloc.items()}
-        else:
-            pct = {d["name"]: 0.0 for d in self.debts}
-        self.monthly_allocations.append({"month": self.months_elapsed, "allocations": pct})
+        # Record exact allocations
+        self.monthly_allocations.append({
+            "month": self.months_elapsed, 
+            "allocations": {k: round(v, 2) for k, v in month_alloc.items()}
+        })
 
         # Check termination
         all_paid = all(d["balance"] <= 0 for d in self.debts)

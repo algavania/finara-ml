@@ -89,16 +89,10 @@ def simulate_repayment(debts_sim, income, expenses, std_dev, is_deterministic=Tr
                 d['balance'] += monthly_interest
                 total_interest_paid += monthly_interest
                 
-        # Calculate percentages for the response
-        total_paid_this_month = sum(month_alloc.values())
-        if total_paid_this_month > 0:
-            percentages = {k: round(v / total_paid_this_month, 4) for k, v in month_alloc.items()}
-        else:
-            percentages = {k: 0.0 for k in month_alloc.keys()}
-            
+        # Record exact allocations for the response
         allocations.append({
             "month": month,
-            "allocations": percentages
+            "allocations": {k: round(v, 2) for k, v in month_alloc.items()}
         })
         
     return month, allocations, total_interest_paid
@@ -249,21 +243,32 @@ async def rl_recommend(request: RLOptimizerRequest):
     )
 
 
+from typing import Any, Dict, List, Optional, Tuple
+
 # ---------------------------------------------------------------------------
 # Snowball / Avalanche / Finara strategy comparison
 # ---------------------------------------------------------------------------
 
-def simulate_strategy(debts_list, income, expenses, strategy="finara", ahp_priorities=None, std_dev=0.15, is_deterministic=True):
+def simulate_strategy(
+    debts_list: List[Dict[str, Any]], 
+    income: float, 
+    expenses: float, 
+    strategy: str = "finara", 
+    ahp_priorities: Optional[Dict[str, float]] = None, 
+    std_dev: float = 0.15, 
+    is_deterministic: bool = True
+) -> Tuple[int, float, List[Dict[str, Any]]]:
     """
     Generic simulation that supports three strategies:
       - 'snowball'  : excess goes to smallest balance first
       - 'avalanche' : excess goes to highest interest rate first
       - 'finara'    : excess goes to highest AHP priority first (default)
-    Returns (months, total_interest_paid).
+    Returns (months, total_interest_paid, allocations).
     """
     current = copy.deepcopy(debts_list)
     month = 0
     total_interest = 0.0
+    allocations = []
 
     while sum(d['balance'] for d in current) > 0 and month < 120:
         month += 1
@@ -277,6 +282,8 @@ def simulate_strategy(debts_list, income, expenses, strategy="finara", ahp_prior
             
         surplus = m_income - m_expenses
         remaining = surplus
+        
+        month_alloc = {d['name']: 0.0 for d in current}
 
         for d in current:
             if d['balance'] > 0:
@@ -284,11 +291,13 @@ def simulate_strategy(debts_list, income, expenses, strategy="finara", ahp_prior
                 if remaining >= payment:
                     d['balance'] -= payment
                     remaining -= payment
+                    month_alloc[d['name']] += payment
                 else:
                     if remaining > 0:
                         pay = min(d['balance'], remaining)
                         d['balance'] -= pay
                         remaining = 0
+                        month_alloc[d['name']] += pay
 
         # 2. Allocate excess based on strategy
         while remaining > 0:
@@ -304,6 +313,7 @@ def simulate_strategy(debts_list, income, expenses, strategy="finara", ahp_prior
             pay = min(target['balance'], remaining)
             target['balance'] -= pay
             remaining -= pay
+            month_alloc[target['name']] += pay
 
         # 3. Accrue monthly interest
         for d in current:
@@ -312,7 +322,13 @@ def simulate_strategy(debts_list, income, expenses, strategy="finara", ahp_prior
                 d['balance'] += mi
                 total_interest += mi
 
-    return month, round(total_interest, 2)
+        if is_deterministic:
+            allocations.append({
+                "month": month,
+                "allocations": {k: round(v, 2) for k, v in month_alloc.items()}
+            })
+
+    return month, round(total_interest, 2), allocations
 
 
 from app.schemas import StrategyComparisonResponse, StrategyResult
@@ -345,7 +361,7 @@ async def compare_strategies(request: OptimizerRequest):
 
     results = {}
     for strategy in ["snowball", "avalanche", "finara"]:
-        months, interest = simulate_strategy(
+        months, interest, allocs = simulate_strategy(
             base_debts,
             request.monthly_income,
             request.monthly_expenses,
@@ -358,7 +374,7 @@ async def compare_strategies(request: OptimizerRequest):
         # Monte Carlo for worst_case_months
         sim_months = []
         for _ in range(100):
-            m, _ = simulate_strategy(
+            m, _, _ = simulate_strategy(
                 base_debts,
                 request.monthly_income,
                 request.monthly_expenses,
@@ -370,10 +386,13 @@ async def compare_strategies(request: OptimizerRequest):
             sim_months.append(m)
         worst_case_months = int(np.percentile(sim_months, 95))
         
+        monthly_plan = [MonthlyAllocation(**a) for a in allocs]
+
         results[strategy] = StrategyResult(
             months_to_free=months,
             total_interest=interest,
-            worst_case_months=worst_case_months
+            worst_case_months=worst_case_months,
+            monthly_plan=monthly_plan
         )
 
     recommendation = min(results.keys(), key=lambda k: results[k].total_interest)
