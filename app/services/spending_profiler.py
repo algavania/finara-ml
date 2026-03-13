@@ -60,7 +60,7 @@ ARCHETYPES = [
         "risk_impact": "Increases cashflow volatility by ~15%. Weekend spending spikes reduce payment reliability.",
         "tips": [
             "Set a fixed weekend spending cap and track it separately",
-            "Use the 24-hour rule: wait a day before non-essential purchases over IDR 200K",
+            "Use the 24-hour rule: wait a day before non-essential purchases over a certain threshold (e.g. IDR 200K)",
             "Move 'fun money' to a separate account to create a natural spending limit",
             "Try meal prepping — dining out is likely your largest weekend expense",
         ],
@@ -78,7 +78,7 @@ ARCHETYPES = [
             "Audit all subscriptions — cancel services unused in the last 30 days",
             "Consolidate streaming services: rotate between them monthly instead of keeping all active",
             "Check for duplicate or overlapping services (e.g., multiple cloud storage plans)",
-            "Potential monthly savings: IDR 200K–500K by cutting 2-3 unused subscriptions",
+            "Potential monthly savings: IDR 200K–500K (or equivalent) by cutting 2-3 unused subscriptions",
         ],
     },
     {
