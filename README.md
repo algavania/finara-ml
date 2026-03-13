@@ -36,11 +36,11 @@ pinned: false
 
 ### Key Features
 
-- ** Explainable Risk Assessment (XAI)** — Gradient Boosting + SHAP values to predict default probability with per-feature explanations
-- ** Smart Document Parsing** — Gemini 2.5 Flash multimodal extraction from receipts, e-statements, and BNPL bills
-- ** Debt Optimization** — AHP-weighted multi-criteria debt ranking with Monte Carlo cashflow simulation
-- ** Strategy Comparison** — Side-by-side comparison of Snowball, Avalanche, and Finara AI strategies
-- ** Privacy-First** — Files processed in-memory, never permanently stored
+- **Explainable Risk Assessment (XAI)** — Gradient Boosting + SHAP values to predict default probability with per-feature explanations
+- **Smart Document Parsing** — Gemini 2.5 Flash multimodal extraction from receipts, e-statements, and BNPL bills
+- **Debt Optimization** — AHP-weighted multi-criteria debt ranking with Monte Carlo cashflow simulation
+- **Strategy Comparison** — Side-by-side comparison of Snowball, Avalanche, and Finara AI strategies
+- **Privacy-First** — Files processed in-memory, never permanently stored
 
 ---
 
@@ -98,7 +98,6 @@ finara-ml/
  data/              # Training CSV data
  test_endpoints.py        # API endpoint tests
  Dockerfile           # Container configuration
- railway.toml          # Railway deployment config
  run_local.sh          # Local development script
  requirements.txt        # Python dependencies
  .env              # Environment variables
@@ -121,7 +120,7 @@ finara-ml/
 | **PyPDF2** | PDF text extraction |
 | **stable-baselines3 / Gymnasium** | RL infrastructure |
 | **Docker** | Containerization |
-| **Railway** | Cloud deployment |
+| **Hugging Face Spaces** | Cloud deployment |
 
 ---
 
@@ -200,15 +199,15 @@ docker build -t finara-ml .
 docker run -p 8000:8000 --env-file .env finara-ml
 ```
 
-### Railway Deployment
+### Hugging Face Deployment
 
-The project includes a `railway.toml` for one-click deployment on [Railway](https://railway.app):
+The project can be deployed to [Hugging Face Spaces](https://huggingface.co/spaces) using Docker:
 
-```bash
-railway up
-```
-
-Make sure to set `ML_API_KEY` and `GEMINI_API_KEY` as environment variables in your Railway project settings.
+1. Create a new Space on Hugging Face, selecting **Docker** as the Space SDK.
+2. Choose **Blank** as the Docker template.
+3. In the Space **Settings** -> **Variables and secrets**, add `ML_API_KEY` and `GEMINI_API_KEY` as Secrets.
+4. Upload the project files or connect your GitHub repository to the Space.
+5. The Space will automatically build the Docker image and deploy the FastAPI application.
 
 ---
 
