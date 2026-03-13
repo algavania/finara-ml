@@ -1,6 +1,6 @@
 ---
 title: Finara ML
-emoji: 🧠
+emoji: robot
 colorFrom: green
 colorTo: blue
 sdk: docker
@@ -8,42 +8,58 @@ pinned: false
 ---
 
 <p align="center">
-  <h1 align="center">🧠 Finara ML Engine</h1>
-  <p align="center"><strong>AI/ML Microservice for Explainable Financial Risk Assessment & Debt Optimization</strong></p>
+ <h1 align="center"> Finara ML Engine</h1>
+ <p align="center"><strong>AI/ML Microservice for Explainable Financial Risk Assessment & Debt Optimization</strong></p>
 </p>
 
 ---
 
-## 📖 About Finara
+## About Finara
 
-**Finara** (_Financial Narrative_) is an explainable, probabilistic financial decision-support system built for students and young professionals. It integrates intelligent expense tracking with risk-aware debt optimization under cashflow uncertainty.
+**Finara** is short form of Financial Risk Awareness. It is an explainable, probabilistic financial decision-support system built for students and young professionals. It integrates intelligent expense tracking with risk-aware debt optimization under cashflow uncertainty.
 
-### ✨ Key Features
+### Quick Links & Demo
 
-- **🎯 Explainable Risk Assessment (XAI)** — Gradient Boosting + SHAP values to predict default probability with per-feature explanations
-- **📄 Smart Document Parsing** — Gemini 2.5 Flash multimodal extraction from receipts, e-statements, and BNPL bills
-- **⚡ Debt Optimization** — AHP-weighted multi-criteria debt ranking with Monte Carlo cashflow simulation
-- **📊 Strategy Comparison** — Side-by-side comparison of Snowball, Avalanche, and Finara AI strategies
-- **🔐 Privacy-First** — Files processed in-memory, never permanently stored
+- **Live Web App:** [https://finara-web.vercel.app](https://finara-web.vercel.app)
+- **Demo Accounts:**
+ 1. `budisantoso@gmail.com`
+ 2. `dewikartika@gmail.com`
+ *(Password for both: `password`)*
+- **PDF Report:** [View Report](https://github.com/algavania/finara-web/blob/main/assets/BorNEO%20HackWknd%202026.pdf)
+- **Pitch Video:** [Watch on YouTube](https://youtu.be/Tc2hFalLVC4)
+
+### Repositories
+
+- [finara-ml](https://github.com/algavania/finara-ml)
+- [finara-web](https://github.com/algavania/finara-web)
+- [finara-supabase](https://github.com/algavania/finara-supabase)
+
+### Key Features
+
+- ** Explainable Risk Assessment (XAI)** — Gradient Boosting + SHAP values to predict default probability with per-feature explanations
+- ** Smart Document Parsing** — Gemini 2.5 Flash multimodal extraction from receipts, e-statements, and BNPL bills
+- ** Debt Optimization** — AHP-weighted multi-criteria debt ranking with Monte Carlo cashflow simulation
+- ** Strategy Comparison** — Side-by-side comparison of Snowball, Avalanche, and Finara AI strategies
+- ** Privacy-First** — Files processed in-memory, never permanently stored
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 This is the **ML Engine** component of the Finara ecosystem:
 
 ```
 finara/
-├── finara-ml/          ← You are here (Python/FastAPI)
-├── finara-supabase/    # Database, Auth, Edge Functions
-└── finara-web/         # Next.js Frontend
+ finara-ml/     ← You are here (Python/FastAPI)
+ finara-supabase/  # Database, Auth, Edge Functions
+ finara-web/     # Next.js Frontend
 ```
 
 The ML engine exposes a FastAPI REST API consumed by `finara-web` (frontend) and `finara-supabase` (edge functions).
 
 ---
 
-## 📡 API Modules
+## API Modules
 
 | Module | Endpoint | Method | Description |
 |---|---|---|---|
@@ -57,40 +73,40 @@ The ML engine exposes a FastAPI REST API consumed by `finara-web` (frontend) and
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 finara-ml/
-├── app/
-│   ├── main.py                     # FastAPI app, CORS, API key auth
-│   ├── schemas.py                  # Pydantic request/response models
-│   ├── routers/
-│   │   ├── xai.py                  # Explainable risk assessment endpoint
-│   │   ├── optimizer.py            # Repayment optimization endpoint
-│   │   ├── parser.py               # Document parsing endpoint
-│   │   └── profiler.py             # Behavioral profiling endpoint
-│   └── services/
-│       ├── risk_model.py           # GradientBoosting training pipeline
-│       ├── shap_explainer.py       # SHAP inference wrapper
-│       ├── feature_engineering.py  # Feature extraction & AHP scoring
-│       ├── document_parser.py      # Gemini multimodal extraction
-│       ├── debt_environment.py     # RL environment (Gymnasium)
-│       ├── rl_optimizer.py         # RL optimizer (stable-baselines3)
-│       ├── spending_profiler.py    # K-Means behavioral clustering
-│       └── mock_data_generator.py  # Synthetic training data (5000 samples)
-├── trained_models/                 # Serialized .pkl model files
-├── data/                           # Training CSV data
-├── test_endpoints.py               # API endpoint tests
-├── Dockerfile                      # Container configuration
-├── railway.toml                    # Railway deployment config
-├── run_local.sh                    # Local development script
-├── requirements.txt                # Python dependencies
-└── .env                            # Environment variables
+ app/
+  main.py           # FastAPI app, CORS, API key auth
+  schemas.py         # Pydantic request/response models
+  routers/
+    xai.py         # Explainable risk assessment endpoint
+    optimizer.py      # Repayment optimization endpoint
+    parser.py        # Document parsing endpoint
+    profiler.py       # Behavioral profiling endpoint
+  services/
+    risk_model.py      # GradientBoosting training pipeline
+    shap_explainer.py    # SHAP inference wrapper
+    feature_engineering.py # Feature extraction & AHP scoring
+    document_parser.py   # Gemini multimodal extraction
+    debt_environment.py   # RL environment (Gymnasium)
+    rl_optimizer.py     # RL optimizer (stable-baselines3)
+    spending_profiler.py  # K-Means behavioral clustering
+    mock_data_generator.py # Synthetic training data (5000 samples)
+ trained_models/         # Serialized .pkl model files
+ data/              # Training CSV data
+ test_endpoints.py        # API endpoint tests
+ Dockerfile           # Container configuration
+ railway.toml          # Railway deployment config
+ run_local.sh          # Local development script
+ requirements.txt        # Python dependencies
+ .env              # Environment variables
 ```
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Technology | Purpose |
 |---|---|
@@ -109,7 +125,7 @@ finara-ml/
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -125,8 +141,8 @@ cd finara-ml
 
 # Create and activate virtual environment
 python3 -m venv venv
-source venv/bin/activate   # macOS/Linux
-# venv\Scripts\activate    # Windows
+source venv/bin/activate  # macOS/Linux
+# venv\Scripts\activate  # Windows
 
 # Install dependencies
 pip install --upgrade pip
@@ -196,15 +212,15 @@ Make sure to set `ML_API_KEY` and `GEMINI_API_KEY` as environment variables in y
 
 ---
 
-## 🔗 Integration with Other Finara Services
+## Integration with Other Finara Services
 
-### ↔️ Integration with `finara-web`
+### Integration with `finara-web`
 
 The frontend calls the ML engine directly via Axios. Configure the following environment variables in `finara-web/.env`:
 
 ```env
-NEXT_PUBLIC_ML_API_URL=http://localhost:8000    # ML engine URL
-NEXT_PUBLIC_ML_API_KEY=your_secure_api_key      # Must match ML_API_KEY
+NEXT_PUBLIC_ML_API_URL=http://localhost:8000  # ML engine URL
+NEXT_PUBLIC_ML_API_KEY=your_secure_api_key   # Must match ML_API_KEY
 ```
 
 The web app uses the ML engine for:
@@ -212,13 +228,13 @@ The web app uses the ML engine for:
 - **Smart Debt Optimizer** → calls `/api/optimizer/recommend` for repayment strategies
 - **Transaction import** → calls `/api/parser/parse-document` for document extraction
 
-### ↔️ Integration with `finara-supabase`
+### Integration with `finara-supabase`
 
 Supabase Edge Functions can call the ML engine as middleware. The ML engine's CORS is pre-configured to accept requests from both `localhost:3000` (dev) and your Supabase project URL.
 
 ---
 
-## 🧪 Testing
+## Testing
 
 Run the endpoint tests:
 
@@ -229,5 +245,5 @@ python test_endpoints.py
 ---
 
 <p align="center">
-  Built with 🧠 ML + 💡 Explainable AI + 🎯 Decision Science
+ Built with ML + Explainable AI + Decision Science
 </p>
